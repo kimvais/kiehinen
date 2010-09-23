@@ -4,20 +4,43 @@ reserved.
 ''' 
 
 import simplejson as json
+from debug import LOG
+from struct import pack,unpack,calcsize
 
 COLLNAME = "%s@en-US" 
 #LOCALPATH = "/media/Kindle/documents"
-LOCALPATH = "/home/kparviainen/py/kindle/testdata"
+LOCALPATH = "/home/kparviainen/py/kindle/test2"
 KINDLEPATH = "/mnt/us/documents"
-JSONFILE = "/media/Kindle/system/kjd.json"
-COLLFILE = "/media/Kindle/system/collections.json"
+#JSONFILE = "/media/Kindle/system/collections.json"
+JSONFILE = "/home/kparviainen/py/kindle/test2/collections.json"
+MOBIHEADER_FMT = ">4s4I48x2I"
+'''
+http://wiki.mobileread.com/wiki/MOBI#Format
+
+4s - MOBI
+I - hlen
+I - type
+I - encoding
+I - UID
+48x - (I+40x+I) generator version + reserved + 1st non-book index
+I - full name offset
+I - full name length
+I - locale
+32x - 4I + 16x - uninteresting stuff
+I - EXTH flags
+32x - unknown
+16x - 4I drm stuff
+'''
+EXTH_FMT = ">4x2I"
+''' 4x = "EXTH", I = hlen, I = record count
+
 
 # JSON helper functions
 def load_data():
-    return json.loads(open(COLLFILE, 'r').read())
+    return json.loads(open(JSONFILE, 'r').read())
 
 def save_data(kjd):
-    open(COLLFILE, 'w').write(json.dumps(kjd))
+    open(JSONFILE, 'w').write(json.dumps(kjd))
 
 # Kindle access
 def read_palmdb(data):
@@ -27,19 +50,34 @@ def read_palmdb(data):
     return db
 
 def get_books():
+    supported_types = ('BOOKMOBI','TEXtREAd')
     import glob
     files =  glob.glob("%s/*" % LOCALPATH)
     for fn in files:
         d = open(fn).read()
         type = d[60:68]
+        if type not in supported_types:
+            LOG(1,"Unsupported file type %s for file %s" % (type,fn))
+            continue
+        db = read_palmdb(d) 
+        rec0 = db.records[0].toByteArray(0)[1]
+        LOG(5,repr(rec0))
         if type == 'BOOKMOBI':
-            print "%s is a MOBI book" % fn
-            db = read_palmdb(d) 
-            mobiheader = db.records[0].toByteArray(0)[1][:242]
+            LOG(3,"%s is a MOBI book" % fn)
+            id, hlen, mobitype, encoding, uid, nameoffs, namelen = unpack(
+                    MOBIHEADER_FMT, rec0[16:16+calcsize(MOBIHEADER_FMT)])
+            LOG(3,
+            "id: %s, hlen %d, type %d, encoding %d, uid %d, offset %d, len %d" %
+            (id, hlen, mobitype, encoding, uid, nameoffs, namelen))
+            LOG(3,"Book name: %s" % rec0[nameoffs:nameoffs+namelen])
+            if id != 'MOBI':
+                LOG(0,"Mobi header missing!")
+            if (0x40 & struct.unpack(">I",rec0[128:132]): # check for EXTH
+                
         elif type == 'TEXtREAd':
-            print "%s is an older MOBI book" % fn
+            LOG(2,"%s is an older MOBI book" % fn)
         else:
-            print "%s is of unsupported format :(" % fn
+            LOG(1,"%s is of unsupported format :(" % fn)
 
     filenames = [x.replace(LOCALPATH, KINDLEPATH) for x in files]
     return dict([(make_hash(x),x) for x in filenames])
@@ -50,14 +88,14 @@ def update_ts(collection):
     collection['lastAccess'] = int(time()*1000)
 
 def add_collection(kjd, collection):
-    print "Adding collection %s" % collection
+    LOG(3,"Adding collection %s" % collection)
     time_ms = int(time.time()*1000)    
     new_item = {}
     cn = COLLNAME % collection
     if not ((cn) in kjd):
         kjd[cn] = {'items':[],'lastAccess':time_ms}
     else:
-        print "Collection %s already exists" % collection
+        LOG(1,"Collection %s already exists" % collection)
         update_ts(kjd[cn])
 
 def delete_collection(kjd, collection):
@@ -65,7 +103,7 @@ def delete_collection(kjd, collection):
     if cn in kjd:
         del kjd[cn]    
     else:
-        print 'Collection %s does not exist' % collection
+        LOG(1,'Collection %s does not exist' % collection)
 
 # Item functions
 def make_hash(s):
@@ -79,7 +117,7 @@ def make_hash(s):
 def add_item(kjd, collection, name):
     cn = COLLNAME % collection
     if not ((cn) in kjd):
-        print "Error. collection %s does not exist" % collection
+        LOG(1,"Error. collection %s does not exist" % collection)
     else:
         kjd[cn]['items'].append(make_hash(name))
         update_ts(kjd[cn])

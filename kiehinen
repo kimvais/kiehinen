@@ -64,7 +64,9 @@ def main():
         kindle.delete_collection(kjd, options.delete)
     elif options.list:
         for key in kjd.keys():
+            pass
             print str(key.split('@')[0])
+        print kindle.get_books()
     elif options.add:
         kindle.add_item(kjd, options.add, args[0])
     elif options.remove:
