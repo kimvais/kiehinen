@@ -32,7 +32,7 @@ I - EXTH flags
 16x - 4I drm stuff
 '''
 EXTH_FMT = ">4x2I"
-''' 4x = "EXTH", I = hlen, I = record count
+'''4x = "EXTH", I = hlen, I = record count'''
 
 
 # JSON helper functions
