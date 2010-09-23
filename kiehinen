@@ -32,6 +32,11 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Requirements:
+    PalmDB module (can be installed from pip - requires 4Suite-XML, pip
+    install for 4Suite-XML seems to bug, but it can be found from yum)
 ''' # Standard BSD 2-clause license << K
 
 import optparse,kindle
@@ -39,7 +44,8 @@ import optparse,kindle
 def main():
 
     usage = "usage: %prog [options]"
-    p = optparse.OptionParser(usage=usage)
+    ver = "0.1"
+    p = optparse.OptionParser(usage=usage,version=ver)
     p.add_option('--new', '-n', help="create a new collection")
     p.add_option('--delete', '-d', help="delete a collection")
     p.add_option('--remove', '-r', help="remove an item from a collection")

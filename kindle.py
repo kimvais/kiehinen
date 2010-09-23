@@ -6,7 +6,9 @@ reserved.
 import simplejson as json
 
 COLLNAME = "%s@en-US" 
-BOOKPATH = "/media/Kindle/documents"
+#LOCALPATH = "/media/Kindle/documents"
+LOCALPATH = "/home/kparviainen/py/kindle/testdata"
+KINDLEPATH = "/mnt/us/documents"
 JSONFILE = "/media/Kindle/system/kjd.json"
 COLLFILE = "/media/Kindle/system/collections.json"
 
@@ -18,9 +20,29 @@ def save_data(kjd):
     open(COLLFILE, 'w').write(json.dumps(kjd))
 
 # Kindle access
-def get_booklist(dir):
+def read_palmdb(data):
+    from PalmDB import PalmDatabase
+    db = PalmDatabase.PalmDatabase()
+    db.fromByteArray(data)
+    return db
+
+def get_books():
     import glob
-    return glob.glob("%s/*" % dir)
+    files =  glob.glob("%s/*" % LOCALPATH)
+    for fn in files:
+        d = open(fn).read()
+        type = d[60:68]
+        if type == 'BOOKMOBI':
+            print "%s is a MOBI book" % fn
+            db = read_palmdb(d) 
+            mobiheader = db.records[0].toByteArray(0)[1][:242]
+        elif type == 'TEXtREAd':
+            print "%s is an older MOBI book" % fn
+        else:
+            print "%s is of unsupported format :(" % fn
+
+    filenames = [x.replace(LOCALPATH, KINDLEPATH) for x in files]
+    return dict([(make_hash(x),x) for x in filenames])
 
 # Collection functions
 def update_ts(collection):
@@ -52,7 +74,7 @@ def make_hash(s):
     by the path to documents folder on Kindle 2.x and 3.0.x
     '''
     from hashlib import sha1
-    return "*%s" % sha1("/mnt/us/documents/%s" % s).hexdigest()
+    return "*%s" % sha1(s).hexdigest()
 
 def add_item(kjd, collection, name):
     cn = COLLNAME % collection
