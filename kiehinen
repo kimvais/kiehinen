@@ -1,0 +1,121 @@
+#!/usr/bin/env python
+'''
+KIEHINEN - A kindle collection management software
+
+"kiehinen" (noun); Finnish for 'a feather stick' - see
+http://fi.wikipedia.org/wiki/Kiehinen
+  and/or
+http://en.wikipedia.org/wiki/Feather_stick
+
+Copyright 2010 Kimmo Parviainen-Jalanko <k+kindle@77.fi>. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR CONTRIBUTORS
+BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+THE POSSIBILITY OF SUCH DAMAGE.
+''' # Standard BSD 2-clause license << K
+
+import optparse, time
+import simplejson as json
+
+COLLNAME = "%s@en-US" 
+BOOKPATH = "/media/Kindle/documents"
+JSONFILE = "/media/Kindle/system/kjd.json"
+COLLFILE = "/media/Kindle/system/collections.json"
+
+def make_hash(s):
+    '''
+    Calculates a SHA1 hash, prepended with * from filename prefixed by the path to documents folder on Kindle 2.x and 3.0.x
+    '''
+    from hashlib import sha1
+    return "*%s" % sha1("/mnt/us/documents/%s" % s).hexdigest()
+
+def get_booklist(dir):
+    import glob
+    return glob.glob("%s/*" % dir)
+
+def load_json(filename):
+    return json.loads(open(filename, 'r').read())
+
+def write_json(kjd, filename):
+    open(filename, 'w').write(json.dumps(kjd))
+
+def update_ts(collection):
+    collection['lastAccess'] = int(time.time()*1000)
+
+def add_collection(kjd, coll):
+    print "Adding collection %s" % coll
+    time_ms = int(time.time()*1000)    
+    new_item = {}
+    cn = COLLNAME % coll
+    if not ((cn) in kjd):
+        kjd[cn] = {'items':[],'lastAccess':time_ms}
+    else:
+        print "Collection %s already exists" % coll
+        update_ts(kjd[cn])
+
+def add_item(kjd, coll, name):
+    cn = COLLNAME % coll
+    if not ((cn) in kjd):
+        print "Error. collection %s does not exist" % coll
+    else:
+        kjd[cn]['items'].append(make_hash(name))
+        update_ts(kjd[cn])
+
+def delete_collection(kjd, coll):
+    cn = COLLNAME % coll
+    if cn in kjd:
+        del kjd[cn]    
+    else:
+        print 'Collection %s does not exist' % coll
+
+
+def main():
+
+    # Generate options and parse arguments
+    list = False
+    usage = "usage: %prog [options]"
+    p = optparse.OptionParser(usage=usage)
+    p.add_option('--new', '-n', help="create a new collection")
+    p.add_option('--delete', '-d', help="delete a collection")
+    p.add_option('--remove', '-r', help="remove an item from a collection")
+    p.add_option('--add', '-a', help="add an item to a collection")
+    p.add_option('--list', '-l', action="store_true", dest="list",
+        help="list collections")
+    options, args = p.parse_args()
+
+    # Load the json file
+    kjd = load_json(COLLFILE)
+
+    # Process options    
+    if options.new:
+        add_collection(kjd, options.new)
+    elif options.delete:
+        delete_collection(kjd, options.delete)
+    elif options.list:
+        for key in kjd.keys():
+            print str(key.split('@')[0])
+    elif options.add:
+        add_item(kjd, options.add, args[0])
+    elif options.remove:
+        remove_item(kjd, options.remove, args[0])
+
+    # Write back to file
+    #write_json(COLLFILE)
+    write_json(kjd,"TEST.collections.json")
+
+if __name__ == '__main__':
+    main()
