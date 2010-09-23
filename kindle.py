@@ -72,7 +72,8 @@ def get_books():
             LOG(3,"Book name: %s" % rec0[nameoffs:nameoffs+namelen])
             if id != 'MOBI':
                 LOG(0,"Mobi header missing!")
-            if (0x40 & struct.unpack(">I",rec0[128:132]): # check for EXTH
+            if (0x40 & unpack(">I",rec0[128:132])[0]): # check for EXTH
+                pass
                 
         elif type == 'TEXtREAd':
             LOG(2,"%s is an older MOBI book" % fn)
