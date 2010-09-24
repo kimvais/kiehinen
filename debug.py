@@ -1,5 +1,16 @@
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+LEVELS = ("ERROR","WARN","NOTICE","INFO","DEBUG","XXX")
+facilities = (
+        logging.error,    # 0
+        logging.warn,     # 1
+        logging.info,     # 2
+        logging.debug     # 3
+        )
+
 def LOG(level,s):
     import sys
     """Helper function to print log messages"""
-    LEVELS = ("ERROR","WARN","NOTICE","INFO","DEBUG","XXX")
-    sys.stderr.write("%s: %s\n" % (LEVELS[level],s))
+    #sys.stderr.write("%s: %s\n" % (LEVELS[level],s))
+    facilities[level](s)
