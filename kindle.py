@@ -59,7 +59,8 @@ def get_books():
 def read_book(fn):
     d = open(fn).read()
     encodings = {
-            1252: 'cp1252'
+            1252: 'cp1252',
+            65001: 'utf-8'
             }
     supported_types = ('BOOKMOBI','TEXtREAd')
     ptype = d[60:68]
