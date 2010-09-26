@@ -1,25 +1,32 @@
 from debug import LOG
 from struct import unpack,pack,calcsize
 
-MOBIHEADER_FMT = ">4s4I48x2I"
-'''
-http://wiki.mobileread.com/wiki/MOBI#Format
+MOBI_HDR_FIELDS = (
+    ("id",16,"4s"),
+    ("header_len",20,"I"),
+    ("mobi_type",24,"I"),
+    ("encoding",28,"I"),
+    ("UID",32,"I"),
+    ("generator_version",36,"I"),
+    ("reserved",40,"40s"),
+    ("first_nonbook_idx",80,"I"),
+    ("full_name_offs",84,"I"),
+    ("full_name_len",88,"I"),
+    ("locale",92,"I"),
+    ("input_lang",96,"I"),
+    ("output_lang",100,"I"),
+    ("format_version",104,"I"),
+    ("first_image_idx",108,"I"),
+    ("unknown",112,"16s"),
+    ("exth_flags",128,"I"),
+    ("unknown2",132,"36s"),
+    ("drm_offs",168,"I"),
+    ("drm_count",172,"I"),
+    ("drm_size",174,"I"),
+    ("drm_flags",176,"I"),
+    ("extra_data_flags",242,"H")
+    )
 
-4s - MOBI
-I - hlen
-I - type
-I - encoding
-I - UID
-48x - (I+40x+I) generator version + reserved + 1st non-book index
-I - full name offset
-I - full name length
-I - locale
-32x - 4I + 16x - uninteresting stuff
-I - EXTH flags
-32x - unknown
-16x - 4I drm stuff
-'''
-            
 EXTH_FMT = ">4x2I"
 '''4x = "EXTH", I = hlen, I = record count'''
 
@@ -82,20 +89,29 @@ def read(fn):
     #LOG(5,repr(rec0))
     if ptype == 'BOOKMOBI':
         LOG(3,"This is a MOBI book")
-        id, hlen, mobitype, encoding, uid, nameoffs, namelen = unpack(
-                MOBIHEADER_FMT, rec0[16:16+calcsize(MOBIHEADER_FMT)])
-        LOG(3,
-        "id: %s, hlen %d, type %d, encoding %d, uid %d, offset %d, len %d" %
-        (id, hlen, mobitype, encoding, uid, nameoffs, namelen))
+        mobiheader = {}
+        for field,pos,fmt in MOBI_HDR_FIELDS:
+            end = pos + calcsize(fmt)
+            if (end > len(rec0) or 
+                ("header_len" in mobiheader 
+                    and end > mobiheader["header_len"])):
+                    continue
+            LOG(3,"field: %s, fmt: %s, @ [%d:%d], data: %s" % (
+                field, fmt, pos, end, repr(rec0[pos:end])))
+            (mobiheader[field],) = unpack(">%s" % fmt,rec0[pos:end])
+
+        LOG(3, "mobiheader: %s" % repr(mobiheader))
 
         # Get and decode the book name
-        name = rec0[nameoffs:nameoffs+namelen].decode(encodings[encoding])
+        pos = mobiheader['full_name_offs']
+        end = pos + mobiheader['full_name_len']
+        name = rec0[pos:end].decode(encodings[mobiheader['encoding']])
 
-        LOG(3,"Book name: %s" % name)
-        if id != 'MOBI':
+        LOG(2,"Book name: %s" % name)
+        if mobiheader['id'] != 'MOBI':
             LOG(0,"Mobi header missing!")
-        if (0x40 & unpack(">I",rec0[128:132])[0]): # check for EXTH
-            exth = parse_exth(rec0,hlen+16)
+        if (0x40 & mobiheader['exth_flags']): # check for EXTH
+            exth = parse_exth(rec0,mobiheader['header_len']+16)
 
     elif ptype == 'TEXtREAd':
         LOG(2,"This is an older MOBI book")
