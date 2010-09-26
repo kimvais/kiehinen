@@ -73,7 +73,7 @@ EXTH_RECORD_TYPES = {
         401 : 'clipping limit', # int
         402 : 'publisher limit',
         404 : 'ttsflag',
-        501 : 'cde type'
+        501 : 'cde type',
         502 : 'last update time',
         503 : 'updated title'
         }
