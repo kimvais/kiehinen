@@ -14,7 +14,7 @@ KINDLEDIR = "/home/kimvais/tmp/kiehinen/"
 BOOKPATH = KINDLEDIR + "documents/"
 JSONFILE = KINDLEDIR + "system/collections.json"
 
-KINDLE_INTERNAL_PATH = "/mnt/us/documents"
+KINDLE_INTERNAL_PATH = "/mnt/us/documents/"
 COLLNAME = "%s@en-US" 
 
 # JSON helper functions
