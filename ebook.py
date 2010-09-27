@@ -1,5 +1,6 @@
 from debug import LOG
 from struct import unpack,pack,calcsize
+from langcodes import LANGUAGES
 
 MOBI_HDR_FIELDS = (
     ("id",16,"4s"),
@@ -12,7 +13,9 @@ MOBI_HDR_FIELDS = (
     ("first_nonbook_idx",80,"I"),
     ("full_name_offs",84,"I"),
     ("full_name_len",88,"I"),
-    ("locale",92,"I"),
+    ("locale_highbytes",92,"H"),
+    ("locale_country",94,"B"),
+    ("locale_language",95,"B"),
     ("input_lang",96,"I"),
     ("output_lang",100,"I"),
     ("format_version",104,"I"),
@@ -118,6 +121,16 @@ def read(fn):
         LOG(3, "mobiheader: %s" % repr(mobiheader))
 
         # Get and decode the book name
+        if mobiheader['locale_language'] in LANGUAGES:
+            lang = LANGUAGES[mobiheader['locale_language']]
+            print lang
+            if mobiheader['locale_country'] == 0:
+                LOG(2,"Book language: %s" % lang[0][1])
+            elif mobiheader['locale_country'] in lang:
+                country = lang[mobiheader['locale_country']]
+                LOG(2,"Book language is %s (%s)" % (
+                    lang[0][1],country[1]))
+
         pos = mobiheader['full_name_offs']
         end = pos + mobiheader['full_name_len']
         name = rec0[pos:end].decode(encodings[mobiheader['encoding']])
