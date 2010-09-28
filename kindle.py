@@ -9,7 +9,7 @@ from debug import LOG
 
 # Set this to point to kindle, default for most modern Linuxes below
 #KINDLEDIR = "/media/Kindle/"
-KINDLEDIR = "/home/kparviainen/py/kindle/test2/"
+KINDLEDIR = "/home/kimvais/tmp/kiehinen/"
 
 BOOKPATH = KINDLEDIR + "documents/"
 JSONFILE = KINDLEDIR + "system/collections.json"
@@ -25,14 +25,19 @@ def save_data(kjd):
     open(JSONFILE, 'w').write(json.dumps(kjd))
 
 # Kindle access
-def get_books():
+def get_books(progress_func=lambda: None):
     import glob
+    ret = {}
     files =  glob.glob("%s/*" % BOOKPATH)
-    for fn in files:
+    tot = len(files)
+    for c,fn in enumerate(files):
+        progress_func(c+1,tot,fn)
         LOG(3,"\n - Processing file %s" % fn)
-        ebook.read(fn)
-    filenames = [x.replace(BOOKPATH, KINDLE_INTERNAL_PATH) for x in files]
-    return dict([(make_hash(x),x) for x in filenames])
+        key = make_hash(fn.replace(BOOKPATH, KINDLE_INTERNAL_PATH))
+        val = ebook.read(fn)
+        if val:
+            ret[key] = val
+    return ret
 
 # Collection functions
 def update_ts(collection):

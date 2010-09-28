@@ -40,10 +40,14 @@ Requirements:
 ''' # Standard BSD 2-clause license << K
 
 import optparse,kindle
-from debug import LOG
+#from debug import LOG
+def LOG(n,s):
+    print "%d:%s" % (n,s)
+
+def report_status(at,total,fn):
+    print "Reading file %s (%d/%d)" % (fn,at,total)
 
 def main():
-
     usage = "usage: %prog [options]"
     ver = "0.1"
     p = optparse.OptionParser(usage=usage,version=ver)
@@ -66,7 +70,16 @@ def main():
     elif options.list:
         for key in kjd.keys():
             LOG(2,"Found collection %s" % str(key.split('@')[0]))
-        LOG(2,"Found books: %s" % kindle.get_books())
+        books = kindle.get_books(report_status)
+        LOG(2,"Found %d books" % len(books))
+        for hash,book in books.items():
+            print hash,book.keys()
+            print "%s: %s - %s (%s)" % (
+                    hash,
+                    ' & '.join(book['exth']['author']),
+                    book['title'],
+                    book['language']
+                    )
     elif options.add:
         kindle.add_item(kjd, options.add, args[0])
     elif options.remove:

@@ -123,8 +123,9 @@ def read(fn):
         # Get and decode the book name
         if mobiheader['locale_language'] in LANGUAGES:
             lang = LANGUAGES[mobiheader['locale_language']]
-            print lang
+            mobiheader['language'] = lang[0][1]
             if mobiheader['locale_country'] == 0:
+                mobiheader['language'] = lang[0][1]
                 LOG(2,"Book language: %s" % lang[0][1])
             elif mobiheader['locale_country'] in lang:
                 country = lang[mobiheader['locale_country']]
@@ -134,6 +135,7 @@ def read(fn):
         pos = mobiheader['full_name_offs']
         end = pos + mobiheader['full_name_len']
         name = rec0[pos:end].decode(encodings[mobiheader['encoding']])
+        mobiheader['title'] = name
 
         LOG(2,"Book name: %s" % name)
         if mobiheader['id'] != 'MOBI':
