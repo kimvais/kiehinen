@@ -141,9 +141,15 @@ def read(fn):
         if (0x40 & mobiheader['exth_flags']): # check for EXTH
             exth = parse_exth(rec0,mobiheader['header_len']+16)
             LOG(3,"EXTH header: %s" % repr(exth))
+            mobiheader['exth'] = exth
+            mobiheader['rawdata'] = d
+        
+        return mobiheader
 
     elif ptype == 'TEXtREAd':
         LOG(2,"This is an older MOBI book")
+
+        return {'rawdata':d}
 
 def parse_exth(data,pos):
     ret = {}
