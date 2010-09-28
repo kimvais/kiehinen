@@ -73,12 +73,9 @@ def main():
         books = kindle.get_books(report_status)
         LOG(2,"Found %d books" % len(books))
         for hash,book in books.items():
-            print hash,book.keys()
-            print "%s: %s - %s (%s)" % (
+            print "%s: %s" % (
                     hash,
-                    ' & '.join(book['exth']['author']),
-                    book['title'],
-                    book['language']
+                    book.get_data()
                     )
     elif options.add:
         kindle.add_item(kjd, options.add, args[0])

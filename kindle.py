@@ -34,7 +34,7 @@ def get_books(progress_func=lambda: None):
         progress_func(c+1,tot,fn)
         LOG(3,"\n - Processing file %s" % fn)
         key = make_hash(fn.replace(BOOKPATH, KINDLE_INTERNAL_PATH))
-        val = ebook.read(fn)
+        val = ebook.Book(fn)
         if val:
             ret[key] = val
     return ret

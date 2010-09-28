@@ -89,69 +89,86 @@ def parse_palmdb(data):
     db.fromByteArray(data)
     return db
 
-def read(fn):
-    d = open(fn).read()
-    encodings = {
-            1252: 'cp1252',
-            65001: 'utf-8'
-            }
-    supported_types = ('BOOKMOBI','TEXtREAd')
-    ptype = d[60:68]
-    if ptype not in supported_types:
-        LOG(1,"Unsupported file type %s" % (ptype))
-        return None
+class Book:
+    def __init__(self,fn):
+        self.filename = fn
+        d = open(fn).read()
+        encodings = {
+                1252: 'cp1252',
+                65001: 'utf-8'
+                }
+        supported_types = ('BOOKMOBI','TEXtREAd')
+        self.type = d[60:68]
+        if self.type not in supported_types:
+            LOG(1,"Unsupported file type %s" % (self.type))
+            return None
 
-    db = parse_palmdb(d) 
-    rec0 = db.records[0].toByteArray(0)[1]
-    
-    #LOG(5,repr(rec0))
-    if ptype == 'BOOKMOBI':
-        LOG(3,"This is a MOBI book")
-        mobiheader = {}
-        for field,pos,fmt in MOBI_HDR_FIELDS:
-            end = pos + calcsize(fmt)
-            if (end > len(rec0) or 
-                ("header_len" in mobiheader 
-                    and end > mobiheader["header_len"])):
-                    continue
-            LOG(4,"field: %s, fmt: %s, @ [%d:%d], data: %s" % (
-                field, fmt, pos, end, repr(rec0[pos:end])))
-            (mobiheader[field],) = unpack(">%s" % fmt,rec0[pos:end])
-
-        LOG(3, "mobiheader: %s" % repr(mobiheader))
-
-        # Get and decode the book name
-        if mobiheader['locale_language'] in LANGUAGES:
-            lang = LANGUAGES[mobiheader['locale_language']]
-            mobiheader['language'] = lang[0][1]
-            if mobiheader['locale_country'] == 0:
-                mobiheader['language'] = lang[0][1]
-                LOG(2,"Book language: %s" % lang[0][1])
-            elif mobiheader['locale_country'] in lang:
-                country = lang[mobiheader['locale_country']]
-                LOG(2,"Book language is %s (%s)" % (
-                    lang[0][1],country[1]))
-
-        pos = mobiheader['full_name_offs']
-        end = pos + mobiheader['full_name_len']
-        name = rec0[pos:end].decode(encodings[mobiheader['encoding']])
-        mobiheader['title'] = name
-
-        LOG(2,"Book name: %s" % name)
-        if mobiheader['id'] != 'MOBI':
-            LOG(0,"Mobi header missing!")
-        if (0x40 & mobiheader['exth_flags']): # check for EXTH
-            exth = parse_exth(rec0,mobiheader['header_len']+16)
-            LOG(3,"EXTH header: %s" % repr(exth))
-            mobiheader['exth'] = exth
-            mobiheader['rawdata'] = d
+        db = parse_palmdb(d) 
+        self.records = db.records
+        rec0 = self.records[0].toByteArray(0)[1]
         
-        return mobiheader
+        #LOG(5,repr(rec0))
+        if self.type == 'BOOKMOBI':
+            LOG(3,"This is a MOBI book")
+            self.mobi = {}
+            for field,pos,fmt in MOBI_HDR_FIELDS:
+                end = pos + calcsize(fmt)
+                if (end > len(rec0) or 
+                    ("header_len" in self.mobi 
+                        and end > self.mobi["header_len"])):
+                        continue
+                LOG(4,"field: %s, fmt: %s, @ [%d:%d], data: %s" % (
+                    field, fmt, pos, end, repr(rec0[pos:end])))
+                (self.mobi[field],) = unpack(">%s" % fmt,rec0[pos:end])
 
-    elif ptype == 'TEXtREAd':
-        LOG(2,"This is an older MOBI book")
+            LOG(3, "self.mobi: %s" % repr(self.mobi))
 
-        return {'rawdata':d}
+            # Get and decode the book name
+            if self.mobi['locale_language'] in LANGUAGES:
+                lang = LANGUAGES[self.mobi['locale_language']]
+                self.language = lang[0][1]
+                if self.mobi['locale_country'] == 0:
+                    LOG(2,"Book language: %s" % lang[0][1])
+                elif self.mobi['locale_country'] in lang:
+                    country = lang[self.mobi['locale_country']]
+                    LOG(2,"Book language is %s (%s)" % (
+                        lang[0][1],country[1]))
+
+            pos = self.mobi['full_name_offs']
+            end = pos + self.mobi['full_name_len']
+            self.title = rec0[pos:end].decode(encodings[self.mobi['encoding']])
+
+            LOG(2,"Book name: %s" % self.title)
+            
+            if self.mobi['id'] != 'MOBI':
+                LOG(0,"Mobi header missing!")
+                return
+
+            if (0x40 & self.mobi['exth_flags']): # check for EXTH
+                self.exth = parse_exth(rec0,self.mobi['header_len']+16)
+                LOG(3,"EXTH header: %s" % repr(self.exth))
+                if 'author' in self.exth:
+                    self.author = ' & '.join(self.exth['author'])
+                else:
+                    self.author = "n/a"
+                self.rawdata = d
+            
+            return
+
+        elif self.type == 'TEXtREAd':
+            LOG(2,"This is an older MOBI book")
+
+            self.rawdata = d
+
+    def get_data(self):
+        if self.type == 'BOOKMOBI':
+            return "'%s' by [%s] (%s)" % (
+                self.title,
+                self.author,
+                self.language
+                )
+        else:
+            return "%s" % (self.filename)
 
 def parse_exth(data,pos):
     ret = {}
