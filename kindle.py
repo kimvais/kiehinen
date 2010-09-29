@@ -9,7 +9,7 @@ from debug import LOG
 
 # Set this to point to kindle, default for most modern Linuxes below
 #KINDLEDIR = "/media/Kindle/"
-KINDLEDIR = "/home/kimvais/tmp/kiehinen/"
+KINDLEDIR = "/home/kparviainen/py/kindle/test2/"
 
 BOOKPATH = KINDLEDIR + "documents/"
 JSONFILE = KINDLEDIR + "system/collections.json"

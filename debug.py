@@ -3,7 +3,7 @@ import logging
 def xxx(s):
     pass
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 LEVELS = ("ERROR","WARN","NOTICE","INFO","DEBUG","XXX")
 facilities = (
         logging.error,    # 0

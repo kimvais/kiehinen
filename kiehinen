@@ -39,13 +39,68 @@ Requirements:
     install for 4Suite-XML seems to bug, but it can be found from yum)
 ''' # Standard BSD 2-clause license << K
 
-import optparse,kindle
-#from debug import LOG
+# Standard & 3rd party libraries
+import sys,optparse
+from PyQt4.QtGui import *
+from PyQt4.QtCore import *
+
+# Our own stuff
+import kindle
+
 def LOG(n,s):
     print "%d:%s" % (n,s)
 
 def report_status(at,total,fn):
     print "Reading file %s (%d/%d)" % (fn,at,total)
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        QMainWindow.__init__(self)
+
+        screen = QDesktopWidget().screenGeometry()
+        self.resize(screen.width(),screen.height())
+        self.move(0,0)
+        self.setWindowTitle('Kiehinen')
+        
+        self.statusBar().showMessage("Ready")
+
+        menubar = self.menuBar()
+        file = menubar.addMenu('&File')
+
+        self.toolbar = self.addToolBar('Tools')
+
+        exit = QAction(QIcon('icons/exit.png'), 'Exit', self)
+        exit.setShortcut('Ctrl+Q')
+        exit.setStatusTip("Quit program")
+        self.connect(exit, SIGNAL('triggered()'), SLOT('close()'))
+        file.addAction(exit)
+        
+        load = QAction(QIcon('icons/load.png'), 'Load', self)
+        load.setShortcut('Ctrl+L')
+        load.setStatusTip("Load book data")
+        self.connect(load, SIGNAL('triggered()'), self.load)
+        file.addAction(load)
+        self.toolbar.addAction(load)
+
+        save = QAction(QIcon('icons/save.png'), 'Save', self)
+        save.setShortcut('Ctrl+S')
+        save.setStatusTip("Save book data")
+        self.connect(save, SIGNAL('triggered()'), SLOT('save()'))
+        file.addAction(save)
+        self.toolbar.addAction(save)
+
+        self.table = QTableWidget()
+        self.setCentralWidget(self.table)
+
+    def report_progress(self,at,total,fn):
+        self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
+
+    def load(self):
+
+        books = kindle.get_books(self.report_progress)
+
+        self.table.setRowCount(len(books))
+        self.table.setColumnCount(5)
 
 def main():
     usage = "usage: %prog [options]"
@@ -55,11 +110,19 @@ def main():
     p.add_option('--delete', '-d', help="delete a collection")
     p.add_option('--remove', '-r', help="remove an item from a collection")
     p.add_option('--add', '-a', help="add an item to a collection")
+    p.add_option('--no-gui', '-x', action="store_false", dest="use_gui",
+        help="do not use the Qt4 interface", default=True)
     p.add_option('--list', '-l', action="store_true", dest="list",
         help="list collections", default=False)
+    
     options, args = p.parse_args()
 
-    # Load the json file
+    if options.use_gui:
+        app = QApplication(args)
+        mw = MainWindow()
+        mw.show()
+        sys.exit(app.exec_())
+    
     kjd = kindle.load_data()
 
     # Process options    
@@ -87,3 +150,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
