@@ -101,6 +101,11 @@ class MainWindow(QMainWindow):
 
         self.table.setRowCount(len(books))
         self.table.setColumnCount(5)
+        for x,book in enumerate(books.values()):
+            for y,field in enumerate((book.title, book.author, book.language)):
+                item = QTableWidgetItem()
+                item.setText(field)
+                self.table.setItem(x,y,item)
 
 def main():
     usage = "usage: %prog [options]"
@@ -136,10 +141,7 @@ def main():
         books = kindle.get_books(report_status)
         LOG(2,"Found %d books" % len(books))
         for hash,book in books.items():
-            print "%s: %s" % (
-                    hash,
-                    book.get_data()
-                    )
+            print "%s" % hash
     elif options.add:
         kindle.add_item(kjd, options.add, args[0])
     elif options.remove:

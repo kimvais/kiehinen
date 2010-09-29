@@ -92,6 +92,12 @@ def parse_palmdb(data):
 class Book:
     def __init__(self,fn):
         self.filename = fn
+        
+        # Set some fields to defaults
+        self.title = fn
+        self.author = "??"
+        self.language = "??"
+
         d = open(fn).read()
         encodings = {
                 1252: 'cp1252',
@@ -99,11 +105,16 @@ class Book:
                 }
         supported_types = ('BOOKMOBI','TEXtREAd')
         self.type = d[60:68]
+
         if self.type not in supported_types:
             LOG(1,"Unsupported file type %s" % (self.type))
-            return None
+        #    return None
 
         db = parse_palmdb(d) 
+        
+        # now we have a better guess at the title, use it for now
+        self.title = db.attributes['fileName']
+
         self.records = db.records
         rec0 = self.records[0].toByteArray(0)[1]
         
@@ -142,7 +153,7 @@ class Book:
             
             if self.mobi['id'] != 'MOBI':
                 LOG(0,"Mobi header missing!")
-                return
+                return None
 
             if (0x40 & self.mobi['exth_flags']): # check for EXTH
                 self.exth = parse_exth(rec0,self.mobi['header_len']+16)
@@ -152,17 +163,18 @@ class Book:
                 else:
                     self.author = "n/a"
                 self.rawdata = d
-            
-            return
 
+                return None
+            
         elif self.type == 'TEXtREAd':
             LOG(2,"This is an older MOBI book")
-
             self.rawdata = d
+
+        # set the mandatory fields if we do not know them yet
 
     def get_data(self):
         if self.type == 'BOOKMOBI':
-            return "'%s' by [%s] (%s)" % (
+            return u"'%s' by [%s] (%s)" % (
                 self.title,
                 self.author,
                 self.language
