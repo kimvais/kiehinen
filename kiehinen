@@ -78,14 +78,14 @@ class MainWindow(QMainWindow):
         load = QAction(QIcon('icons/load.png'), 'Load', self)
         load.setShortcut('Ctrl+L')
         load.setStatusTip("Load book data")
-        self.connect(load, SIGNAL('triggered()'), self.load)
+        self.connect(load, SIGNAL('triggered()'), self.load_json)
         file.addAction(load)
         self.toolbar.addAction(load)
 
         save = QAction(QIcon('icons/save.png'), 'Save', self)
         save.setShortcut('Ctrl+S')
         save.setStatusTip("Save book data")
-        self.connect(save, SIGNAL('triggered()'), SLOT('save()'))
+        self.connect(save, SIGNAL('triggered()'), self.save_json)
         file.addAction(save)
         self.toolbar.addAction(save)
 
@@ -95,12 +95,24 @@ class MainWindow(QMainWindow):
     def report_progress(self,at,total,fn):
         self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
 
-    def load(self):
+    def save_json(self):
+        if self.json:
+            kindle.save_data(self.json)
+        else:
+            # TODO: display error
+            pass
+
+    def load_json(self):
         
         books = kindle.get_books(self.report_progress)
-        json = kindle.load_data()
+        self.json = kindle.load_data()
 
-        collabels = ['Hash','Title','Author','Language']+[x.replace('@en-US','') for x in json.keys()]
+        collabels = [
+                'Hash',
+                'Title',
+                'Author',
+                'Language'
+                ]+[x.replace('@en-US','') for x in self.json.keys()]
         self.table.setRowCount(len(books))
         self.table.setColumnCount(len(collabels))
         
@@ -121,7 +133,7 @@ class MainWindow(QMainWindow):
                     )
                 self.table.setItem(x,y,item)
             
-            for n,v in enumerate(json.values()):
+            for n,v in enumerate(self.json.values()):
                 item = QTableWidgetItem()
                 item.setFlags(Qt.ItemFlags(
                     Qt.ItemIsSelectable | 
