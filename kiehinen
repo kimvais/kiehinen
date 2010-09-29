@@ -96,16 +96,40 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
 
     def load(self):
-
+        
         books = kindle.get_books(self.report_progress)
+        json = kindle.load_data()
 
+        collabels = ['Hash','Title','Author','Language']+[x.replace('@en-US','') for x in json.keys()]
         self.table.setRowCount(len(books))
-        self.table.setColumnCount(5)
-        for x,book in enumerate(books.values()):
-            for y,field in enumerate((book.title, book.author, book.language)):
-                item = QTableWidgetItem()
-                item.setText(field)
+        self.table.setColumnCount(len(collabels))
+        
+        for n,label in enumerate(collabels):
+            item = QTableWidgetItem(label)
+            self.table.setHorizontalHeaderItem(n,item)
+        
+        for x,(hash,book) in enumerate(books.items()):
+            for y,field in enumerate((
+                hash,
+                book.title,
+                book.author,
+                book.language
+                )):
+                item = QTableWidgetItem(field)
+                item.setFlags(Qt.ItemFlags(
+                    Qt.ItemIsSelectable)
+                    )
                 self.table.setItem(x,y,item)
+            
+            for n,v in enumerate(json.values()):
+                item = QTableWidgetItem()
+                item.setFlags(Qt.ItemFlags(
+                    Qt.ItemIsSelectable | 
+                    Qt.ItemIsUserCheckable |
+                    Qt.ItemIsEnabled
+                    ))
+                item.setCheckState(hash in v['items'])
+                self.table.setItem(x,y+n+1,item)
 
 def main():
     usage = "usage: %prog [options]"
