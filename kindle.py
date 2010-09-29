@@ -6,10 +6,15 @@ reserved.
 import simplejson as json
 import ebook
 from debug import LOG
+from ConfigParser import ConfigParser
 
 # Set this to point to kindle, default for most modern Linuxes below
 #KINDLEDIR = "/media/Kindle/"
-KINDLEDIR = "/home/kparviainen/py/kindle/test2/"
+#KINDLEDIR = "/home/kparviainen/py/kindle/test2/"
+cp = ConfigParser()
+cp.read('.kiehinenrc')
+
+KINDLEDIR = cp.get('system','kindle_path')
 
 BOOKPATH = KINDLEDIR + "documents/"
 JSONFILE = KINDLEDIR + "system/collections.json"

@@ -44,6 +44,7 @@ import sys,optparse
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 
+
 # Our own stuff
 import kindle
 
@@ -140,7 +141,7 @@ class MainWindow(QMainWindow):
                     Qt.ItemIsUserCheckable |
                     Qt.ItemIsEnabled
                     ))
-                item.setCheckState(hash in v['items'])
+                item.setCheckState(Qt.CheckState(hash in v['items']))
                 self.table.setItem(x,y+n+1,item)
 
 def main():
