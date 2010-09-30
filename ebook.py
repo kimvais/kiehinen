@@ -111,7 +111,10 @@ class Book:
             LOG(1,"Unsupported file type %s" % (self.type))
             return None
 
-        db = parse_palmdb(d) 
+        try:
+            db = parse_palmdb(d) 
+        except:
+            return None
        
         self.is_a_book = True
         # now we have a better guess at the title, use it for now

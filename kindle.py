@@ -76,11 +76,18 @@ def make_hash(s):
     from hashlib import sha1
     return "*%s" % sha1(s).hexdigest()
 
-def add_item(kjd, collection, name):
+def add_item(kjd, collection, hash):
     cn = COLLNAME % collection
     if not ((cn) in kjd):
         LOG(1,"Error. collection %s does not exist" % collection)
     else:
-        kjd[cn]['items'].append(make_hash(name))
+        kjd[cn]['items'].append(hash)
         update_ts(kjd[cn])
 
+def remove_item(kjd, collection, hash):
+    cn = COLLNAME % collection
+    if not ((cn) in kjd):
+        LOG(1,"Error. collection %s does not exist" % collection)
+    else:
+        kjd[cn]['items'].remove(hash)
+        update_ts(kjd[cn])

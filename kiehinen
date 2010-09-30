@@ -71,6 +71,38 @@ class Application(QApplication):
         self.books = kindle.get_books(f)
         self.json = kindle.load_data()
 
+class CheckBox(QTableWidgetItem):
+    def __init__(self):
+        QTableWidgetItem.__init__(self,1000)
+        self.setTextAlignment(Qt.AlignVCenter | Qt.AlignJustify)
+        self.setFlags(Qt.ItemFlags( 
+            Qt.ItemIsSelectable | Qt.ItemIsEnabled ))
+
+class Table(QTableWidget):
+    def __init__(self):
+        QTableWidget.__init__(self,5,1)
+
+    def stateChanged(self,item):
+        currentstate = item.checkState()
+        row,col = item.row(),item.column()
+        collection = QTableWidget.horizontalHeaderItem(self,col).text()
+        hash = QTableWidget.item(self,row,0).text()
+        
+        if not currentstate:
+            LOG(3,"Adding item %s to collection %s" % (hash,collection))
+            kindle.add_item(QApplication.instance().json, 
+                    str(collection), 
+                    str(hash)
+                    )
+        else:
+            LOG(3,"Removing item %s from collection %s" % (hash,collection))
+            kindle.remove_item(QApplication.instance().json, 
+                    str(collection), 
+                    str(hash)
+                    )
+
+        item.setCheckState(not currentstate)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -107,7 +139,7 @@ class MainWindow(QMainWindow):
         file.addAction(save)
         self.toolbar.addAction(save)
 
-        self.table = QTableWidget()
+        self.table = Table()
         self.setCentralWidget(self.table)
 
     def report_progress(self,at,total,fn):
@@ -116,9 +148,9 @@ class MainWindow(QMainWindow):
     def load_data(self):
         self.statusBar().showMessage("Getting the list of eBook files")
         QApplication.instance().load_json(self.report_progress)
-        self.update_table()
+        self.create_table()
 
-    def update_table(self):
+    def create_table(self):
         collabels = [
                 'Hash',
                 'Title',
@@ -127,6 +159,8 @@ class MainWindow(QMainWindow):
                 ]+[x.replace('@en-US','') for x in QApplication.instance().json.keys()]
         self.table.setRowCount(len(QApplication.instance().books))
         self.table.setColumnCount(len(collabels))
+        self.connect(self.table, SIGNAL('itemClicked(QTableWidgetItem *)'),
+                       self.table.stateChanged)
         
         for n,label in enumerate(collabels):
             item = QTableWidgetItem(label)
@@ -140,20 +174,22 @@ class MainWindow(QMainWindow):
                 book.language
                 )):
                 item = QTableWidgetItem(field)
+                item.setTextColor(QColor('black'))
                 item.setFlags(Qt.ItemFlags(
                     Qt.ItemIsSelectable)
                     )
                 self.table.setItem(x,y,item)
             
             for n,v in enumerate(QApplication.instance().json.values()):
-                item = QTableWidgetItem()
-                item.setFlags(Qt.ItemFlags(
-                    Qt.ItemIsSelectable | 
-                    Qt.ItemIsUserCheckable |
-                    Qt.ItemIsEnabled
-                    ))
+                '''item = QCheckBox()
+                self.table.setCellWidget(x,y+n+1,item)'''
+
+                item = CheckBox()
                 item.setCheckState(Qt.CheckState(hash in v['items']))
                 self.table.setItem(x,y+n+1,item)
+
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
 def main():
     usage = "usage: %prog [options]"
