@@ -54,6 +54,23 @@ def LOG(n,s):
 def report_status(at,total,fn):
     print "Reading file %s (%d/%d)" % (fn,at,total)
 
+class Application(QApplication):
+    def __init__(self,argv):
+        QApplication.__init__(self,argv)
+        self.json = None
+        self.books = None
+    
+    def save_json(self):
+        if self.json:
+            kindle.save_data(self.json)
+        else:
+            # TODO: display error
+            pass
+    
+    def load_json(self):
+        self.books = kindle.get_books(report_status)
+        self.json = kindle.load_data()
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -79,14 +96,14 @@ class MainWindow(QMainWindow):
         load = QAction(QIcon('icons/load.png'), 'Load', self)
         load.setShortcut('Ctrl+L')
         load.setStatusTip("Load book data")
-        self.connect(load, SIGNAL('triggered()'), self.load_json)
+        self.connect(load, SIGNAL('triggered()'), QApplication.instance().load_json)
         file.addAction(load)
         self.toolbar.addAction(load)
 
         save = QAction(QIcon('icons/save.png'), 'Save', self)
         save.setShortcut('Ctrl+S')
         save.setStatusTip("Save book data")
-        self.connect(save, SIGNAL('triggered()'), self.save_json)
+        self.connect(save, SIGNAL('triggered()'), QApplication.instance().save_json)
         file.addAction(save)
         self.toolbar.addAction(save)
 
@@ -96,32 +113,21 @@ class MainWindow(QMainWindow):
     def report_progress(self,at,total,fn):
         self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
 
-    def save_json(self):
-        if self.json:
-            kindle.save_data(self.json)
-        else:
-            # TODO: display error
-            pass
-
-    def load_json(self):
-        
-        books = kindle.get_books(self.report_progress)
-        self.json = kindle.load_data()
-
+    def update(self):
         collabels = [
                 'Hash',
                 'Title',
                 'Author',
                 'Language'
-                ]+[x.replace('@en-US','') for x in self.json.keys()]
-        self.table.setRowCount(len(books))
+                ]+[x.replace('@en-US','') for x in QApplication.instance().json.keys()]
+        self.table.setRowCount(len(QApplication.instance().books))
         self.table.setColumnCount(len(collabels))
         
         for n,label in enumerate(collabels):
             item = QTableWidgetItem(label)
             self.table.setHorizontalHeaderItem(n,item)
         
-        for x,(hash,book) in enumerate(books.items()):
+        for x,(hash,book) in enumerate(QApplication.instance().books.items()):
             for y,field in enumerate((
                 hash,
                 book.title,
@@ -134,7 +140,7 @@ class MainWindow(QMainWindow):
                     )
                 self.table.setItem(x,y,item)
             
-            for n,v in enumerate(self.json.values()):
+            for n,v in enumerate(QApplication.instance().json.values()):
                 item = QTableWidgetItem()
                 item.setFlags(Qt.ItemFlags(
                     Qt.ItemIsSelectable | 
@@ -157,10 +163,11 @@ def main():
     p.add_option('--list', '-l', action="store_true", dest="list",
         help="list collections", default=False)
     
+
     options, args = p.parse_args()
 
     if options.use_gui:
-        app = QApplication(args)
+        app = Application(sys.argv)
         mw = MainWindow()
         mw.show()
         sys.exit(app.exec_())
