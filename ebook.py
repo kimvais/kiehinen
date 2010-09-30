@@ -97,6 +97,7 @@ class Book:
         self.title = fn
         self.author = "??"
         self.language = "??"
+        self.is_a_book = False
 
         d = open(fn).read()
         encodings = {
@@ -108,10 +109,11 @@ class Book:
 
         if self.type not in supported_types:
             LOG(1,"Unsupported file type %s" % (self.type))
-        #    return None
+            return None
 
         db = parse_palmdb(d) 
-        
+       
+        self.is_a_book = True
         # now we have a better guess at the title, use it for now
         self.title = db.attributes['fileName']
 
