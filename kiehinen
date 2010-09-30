@@ -80,7 +80,8 @@ class CheckBox(QTableWidgetItem):
 
 class Table(QTableWidget):
     def __init__(self):
-        QTableWidget.__init__(self,5,1)
+        QTableWidget.__init__(self)
+        QTableWidget.setSortingEnabled(self,True)
 
     def stateChanged(self,item):
         currentstate = item.checkState()
