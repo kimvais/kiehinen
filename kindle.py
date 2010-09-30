@@ -12,7 +12,7 @@ from ConfigParser import ConfigParser
 #KINDLEDIR = "/media/Kindle/"
 #KINDLEDIR = "/home/kparviainen/py/kindle/test2/"
 cp = ConfigParser()
-cp.read('.kiehinenrc')
+cp.read('kiehinen.conf')
 
 KINDLEDIR = cp.get('system','kindle_path')
 

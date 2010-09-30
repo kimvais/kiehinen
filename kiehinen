@@ -67,8 +67,8 @@ class Application(QApplication):
             # TODO: display error
             pass
     
-    def load_json(self):
-        self.books = kindle.get_books(report_status)
+    def load_json(self,f):
+        self.books = kindle.get_books(f)
         self.json = kindle.load_data()
 
 class MainWindow(QMainWindow):
@@ -96,7 +96,7 @@ class MainWindow(QMainWindow):
         load = QAction(QIcon('icons/load.png'), 'Load', self)
         load.setShortcut('Ctrl+L')
         load.setStatusTip("Load book data")
-        self.connect(load, SIGNAL('triggered()'), QApplication.instance().load_json)
+        self.connect(load, SIGNAL('triggered()'), self.load_data)
         file.addAction(load)
         self.toolbar.addAction(load)
 
@@ -113,7 +113,12 @@ class MainWindow(QMainWindow):
     def report_progress(self,at,total,fn):
         self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
 
-    def update(self):
+    def load_data(self):
+        self.statusBar().showMessage("Getting the list of eBook files")
+        QApplication.instance().load_json(self.report_progress)
+        self.update_table()
+
+    def update_table(self):
         collabels = [
                 'Hash',
                 'Title',
