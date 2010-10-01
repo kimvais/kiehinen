@@ -101,7 +101,7 @@ class Table(QTableWidget):
         QTableWidget.setSortingEnabled(self,True)
 
     def stateChanged(self,row,col):
-        if col < 3:
+        if col < 4:
             return
         
         checked = self.item(row,col).checkState()
@@ -252,6 +252,8 @@ class MainWindow(QMainWindow):
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+        self.table.verticalHeader().hide()
+        self.table.setColumnHidden(0,True)
         
         self.connect(self.table, SIGNAL('cellChanged(int, int)'),
                        self.table.stateChanged)
