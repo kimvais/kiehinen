@@ -1,44 +1,12 @@
 #!/usr/bin/env python
 '''
-KIEHINEN - A kindle management software
+Copyright 2010 Kimmo Parviainen-Jalanko
+All rights reserved.
 
-Copyright 2010 Kimmo Parviainen-Jalanko <k+kindle@77.fi>. All rights
-reserved.
-
-"kiehinen" (noun); Finnish for 'a feather stick' - see
-http://fi.wikipedia.org/wiki/Kiehinen
-  and/or
-http://en.wikipedia.org/wiki/Feather_stick
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-   1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.
-
-   2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
-OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR CONTRIBUTORS
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
-OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-THE POSSIBILITY OF SUCH DAMAGE.
-
+Released under the MIT license, see LICENSE.txt for details.
 '''
-'''
-Icons Copyright (c)  2006-2007  Everaldo Coelho.
-You can find them at Crystal project http://www.everaldo.com/crystal/
-I have used them under LGPL, see icons/LICENSE for details
-'''
+VERSION = "0.1"
+
 '''
 Requirements:
     PalmDB module (can be installed from pip - requires 4Suite-XML, pip
@@ -69,6 +37,7 @@ class Application(QApplication):
         QApplication.__init__(self,argv)
         self.json = None
         self.books = None
+        self.setWindowIcon(QIcon("icons/man.png"))
     
     def save_json(self):
         if self.json:
@@ -112,6 +81,12 @@ class Table(QTableWidget):
                     str(hash)
                     )
 
+    '''about = QMessageBox(QMessageBox.Information,
+            "About kiehinen v%s" % VERSION,
+            '\n'.join((ABOUT,LICENSE)),
+            QMessageBox.Close)
+    about.exec_()'''
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
@@ -120,37 +95,63 @@ class MainWindow(QMainWindow):
         self.resize(screen.width(),screen.height())
         self.move(0,0)
         self.setWindowTitle('Kiehinen')
-        
-        self.statusBar().showMessage("Ready")
+       
+        # Crete the main table
+        self.table = Table()
+        self.setCentralWidget(self.table)
 
+        # Create controls
         menubar = self.menuBar()
-        file = menubar.addMenu('&File')
-
+        filemenu = menubar.addMenu('&File')
+        helpmenu = menubar.addMenu('&Help')
         self.toolbar = self.addToolBar('Tools')
 
+        # Create actions
         load = QAction(QIcon('icons/fileopen.png'), 'Load', self)
         load.setShortcut('Ctrl+L')
         load.setStatusTip("Load book data")
         self.connect(load, SIGNAL('triggered()'), self.load_data)
-        file.addAction(load)
-        self.toolbar.addAction(load)
-
+        
         save = QAction(QIcon('icons/filesave.png'), 'Save', self)
         save.setShortcut('Ctrl+S')
         save.setStatusTip("Save book data")
         self.connect(save, SIGNAL('triggered()'),
                 QApplication.instance().save_json)
-        file.addAction(save)
-        self.toolbar.addAction(save)
+
+        new_coll = QAction(QIcon('icons/edit_add.png'),
+                'New collection', self)
+        new_coll.setStatusTip("Create a new collection")
+
+        remove_coll = QAction(QIcon('icons/edit_remove.png'),
+                'Remove collection', self)
+        remove_coll.setStatusTip("Delete a collection")
 
         exit = QAction(QIcon('icons/exit.png'), 'Exit', self)
         exit.setShortcut('Ctrl+Q')
         exit.setStatusTip("Quit program")
         self.connect(exit, SIGNAL('triggered()'), SLOT('close()'))
-        file.addAction(exit)
-        
-        self.table = Table()
-        self.setCentralWidget(self.table)
+
+        about = QAction('About', self)
+        self.connect(about, SIGNAL('triggered()'), self.show_about)
+
+        # Populate menus
+        filemenu.addAction(load)
+        filemenu.addAction(save)
+        filemenu.addSeparator()
+        filemenu.addAction(exit)
+
+        helpmenu.addAction(about)
+
+        # Populate toolbars
+        self.toolbar.addAction(load)
+        self.toolbar.addAction(save)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(new_coll)
+        self.toolbar.addAction(remove_coll)
+
+        # Connect signals to slots
+
+        self.statusBar().showMessage("Ready")
 
     def report_progress(self,at,total,fn):
         self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
@@ -159,6 +160,12 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Getting the list of eBook files")
         QApplication.instance().load_json(self.report_progress)
         self.create_table()
+
+    def show_about(self):
+        QMessageBox.about(self,
+                "About kiehinen v%s" % VERSION,
+                open("about.html","r").read()
+                )   
 
     def create_table(self):
         collabels = [
