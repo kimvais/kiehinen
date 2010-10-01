@@ -1,6 +1,6 @@
 from debug import LOG
 from struct import unpack,pack,calcsize
-from langcodes import LANGUAGES
+from mobi_languages import LANGUAGES
 
 MOBI_HDR_FIELDS = (
     ("id",16,"4s"),
