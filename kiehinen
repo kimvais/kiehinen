@@ -92,8 +92,8 @@ class CheckBox(QTableWidgetItem):
     def __init__(self):
         QTableWidgetItem.__init__(self,1000)
         self.setTextAlignment(Qt.AlignVCenter | Qt.AlignJustify)
-        #self.setFlags(Qt.ItemFlags( 
-         #   Qt.ItemIsSelectable | Qt.ItemIsEnabled ))
+        self.setFlags(Qt.ItemFlags( 
+            Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable ))
 
 class Table(QTableWidget):
     def __init__(self):
