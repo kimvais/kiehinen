@@ -99,7 +99,8 @@ class Book:
         self.language = "??"
         self.is_a_book = False
 
-        d = open(fn).read()
+        f = open(fn)
+        d = f.read(68)
         encodings = {
                 1252: 'cp1252',
                 65001: 'utf-8'
@@ -109,7 +110,12 @@ class Book:
 
         if self.type not in supported_types:
             LOG(1,"Unsupported file type %s" % (self.type))
+            f.close()
             return None
+
+        f.seek(0)
+        d = f.read()
+        f.close()
 
         try:
             db = parse_palmdb(d) 

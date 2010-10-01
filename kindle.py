@@ -4,6 +4,7 @@ reserved.
 ''' 
 
 import simplejson as json
+import glob
 import ebook
 from debug import LOG
 from ConfigParser import ConfigParser
@@ -24,25 +25,30 @@ COLLNAME = "%s@en-US"
 
 # JSON helper functions
 def load_data():
-    return json.loads(open(JSONFILE, 'r').read())
+    try:
+        return json.load(open(JSONFILE, 'r'))
+    except IOError:
+        LOG(2,"File %s not found" % JSONFILE)
+        return dict()
 
 def save_data(kjd):
     open(JSONFILE, 'w').write(json.dumps(kjd))
 
 # Kindle access
 def get_books(progress_func=lambda: None):
-    import glob
     ret = {}
     files =  glob.glob("%s/*" % BOOKPATH)
-    tot = len(files)
     for c,fn in enumerate(files):
-        progress_func(c+1,tot,fn)
-        LOG(3,"\n - Processing file %s" % fn)
+        progress_func(c)
+        LOG(3,"\n - Processing file #%d: %s" % (c,fn))
         key = make_hash(fn.replace(BOOKPATH, KINDLE_INTERNAL_PATH))
         val = ebook.Book(fn)
         if val.is_a_book:
             ret[key] = val
     return ret
+
+def get_bookcount():
+    return len(glob.glob("%s/*" % BOOKPATH))
 
 # Collection functions
 def update_ts(collection):
@@ -92,5 +98,8 @@ def remove_item(kjd, collection, hash):
     if not ((cn) in kjd):
         LOG(1,"Error. collection %s does not exist" % collection)
     else:
-        kjd[cn]['items'].remove(hash)
-        update_ts(kjd[cn])
+        if hash not in kjd[cn]['items']:
+            return
+        else:
+            kjd[cn]['items'].remove(hash)
+            update_ts(kjd[cn])
