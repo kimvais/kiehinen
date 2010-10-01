@@ -75,21 +75,20 @@ class CheckBox(QTableWidgetItem):
     def __init__(self):
         QTableWidgetItem.__init__(self,1000)
         self.setTextAlignment(Qt.AlignVCenter | Qt.AlignJustify)
-        self.setFlags(Qt.ItemFlags( 
-            Qt.ItemIsSelectable | Qt.ItemIsEnabled ))
+        #self.setFlags(Qt.ItemFlags( 
+         #   Qt.ItemIsSelectable | Qt.ItemIsEnabled ))
 
 class Table(QTableWidget):
     def __init__(self):
         QTableWidget.__init__(self)
         QTableWidget.setSortingEnabled(self,True)
 
-    def stateChanged(self,item):
-        currentstate = item.checkState()
-        row,col = item.row(),item.column()
+    def stateChanged(self,row,col):
+        checked = self.item(row,col).checkState()
         collection = QTableWidget.horizontalHeaderItem(self,col).text()
         hash = QTableWidget.item(self,row,0).text()
         
-        if not currentstate:
+        if checked:
             LOG(3,"Adding item %s to collection %s" % (hash,collection))
             kindle.add_item(QApplication.instance().json, 
                     str(collection), 
@@ -101,8 +100,6 @@ class Table(QTableWidget):
                     str(collection), 
                     str(hash)
                     )
-
-        item.setCheckState(not currentstate)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -160,8 +157,6 @@ class MainWindow(QMainWindow):
                 ]+[x.replace('@en-US','') for x in QApplication.instance().json.keys()]
         self.table.setRowCount(len(QApplication.instance().books))
         self.table.setColumnCount(len(collabels))
-        self.connect(self.table, SIGNAL('itemClicked(QTableWidgetItem *)'),
-                       self.table.stateChanged)
         
         for n,label in enumerate(collabels):
             item = QTableWidgetItem(label)
@@ -191,6 +186,9 @@ class MainWindow(QMainWindow):
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+        
+        self.connect(self.table, SIGNAL('cellChanged(int, int)'),
+                       self.table.stateChanged)
 
 def main():
     usage = "usage: %prog [options]"
