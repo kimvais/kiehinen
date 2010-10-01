@@ -5,7 +5,7 @@ All rights reserved.
 
 Released under the MIT license, see LICENSE.txt for details.
 '''
-VERSION = "0.1"
+VERSION = "0.2"
 
 '''
 Requirements:
@@ -59,9 +59,34 @@ class Application(QApplication):
 
     def create_collection(self):
         table = self.mw.table
+        name, ok = QInputDialog.getText(self.mw, 
+                'Create collection', 'Enter collection name'
+                )
+        if ok:
+            kindle.add_collection(self.json, name)
+            col = table.columnCount()  
+            table.setColumnCount(col+1)
+            item = QTableWidgetItem(name)
+            table.setHorizontalHeaderItem(col, item)
+            for row in range(table.rowCount()):
+                LOG(4,"(col %d, row %d)" % (col, row))
+                item = CheckBox()
+                item.setCheckState(False)
+                table.setItem(row, col, item)
+
+        else:
+            LOG(4,"Collection creation cancelled")
 
     def delete_collection(self):
+        collections = [x.replace("@en-US","") for x in self.json.keys()]
         table = self.mw.table
+        name, ok = QInputDialog.getItem(self.mw, "Delete collection?",
+                "Collection:", collections, 0, False)
+        if ok:
+            kindle.delete_collection(self.json, name)
+        else:
+            LOG(4,"Collection deletion cancelled")
+
 
 class CheckBox(QTableWidgetItem):
     def __init__(self):
@@ -201,8 +226,10 @@ class MainWindow(QMainWindow):
             item = QTableWidgetItem(label)
             self.table.setHorizontalHeaderItem(n,item)
         
-        for x,(hash,book) in enumerate(QApplication.instance().books.items()):
-            for y,field in enumerate((
+        for col, (hash,book) in enumerate(
+                QApplication.instance().books.items()
+                ):
+            for row, field in enumerate((
                 hash,
                 book.title,
                 book.author,
@@ -213,15 +240,15 @@ class MainWindow(QMainWindow):
                 item.setFlags(Qt.ItemFlags(
                     Qt.ItemIsSelectable)
                     )
-                self.table.setItem(x,y,item)
+                self.table.setItem(col,row,item)
             
             for n,v in enumerate(QApplication.instance().json.values()):
                 '''item = QCheckBox()
-                self.table.setCellWidget(x,y+n+1,item)'''
+                self.table.setCellWidget(col,row+n+1,item)'''
 
                 item = CheckBox()
                 item.setCheckState(Qt.CheckState(hash in v['items']))
-                self.table.setItem(x,y+n+1,item)
+                self.table.setItem(col,row+n+1,item)
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()

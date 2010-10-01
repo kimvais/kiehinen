@@ -7,6 +7,7 @@ import simplejson as json
 import glob
 import ebook
 from debug import LOG
+from time import time
 from ConfigParser import ConfigParser
 
 # Set this to point to kindle, default for most modern Linuxes below
@@ -52,14 +53,13 @@ def get_bookcount():
 
 # Collection functions
 def update_ts(collection):
-    from time import time
     collection['lastAccess'] = int(time()*1000)
 
 def add_collection(kjd, collection):
-    LOG(3,"Adding collection %s" % collection)
-    time_ms = int(time.time()*1000)    
+    time_ms = int(time()*1000)    
     new_item = {}
     cn = COLLNAME % collection
+    LOG(3,"Adding collection %s" % cn)
     if not ((cn) in kjd):
         kjd[cn] = {'items':[],'lastAccess':time_ms}
     else:
@@ -68,6 +68,7 @@ def add_collection(kjd, collection):
 
 def delete_collection(kjd, collection):
     cn = COLLNAME % collection
+    LOG(3,"Deleting collection %s" % cn)
     if cn in kjd:
         del kjd[cn]    
     else:
