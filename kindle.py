@@ -81,8 +81,11 @@ def add_item(kjd, collection, hash):
     if not ((cn) in kjd):
         LOG(1,"Error. collection %s does not exist" % collection)
     else:
-        kjd[cn]['items'].append(hash)
-        update_ts(kjd[cn])
+        if hash in kjd[cn]['items']:
+            LOG(1,"%s was already in %s" % (hash,cn))
+        else:
+            kjd[cn]['items'].append(hash)
+            update_ts(kjd[cn])
 
 def remove_item(kjd, collection, hash):
     cn = COLLNAME % collection
