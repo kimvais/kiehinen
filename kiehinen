@@ -69,7 +69,7 @@ class Application(QApplication):
             item = QTableWidgetItem(name)
             table.setHorizontalHeaderItem(col, item)
             for row in range(table.rowCount()):
-                LOG(4,"(col %d, row %d)" % (col, row))
+                LOG(4,"(row %d, col %d)" % (row, col))
                 item = CheckBox()
                 item.setCheckState(False)
                 table.setItem(row, col, item)
@@ -219,39 +219,39 @@ class MainWindow(QMainWindow):
                 'Author',
                 'Language'
                 ]+[x.replace('@en-US','') for x in QApplication.instance().json.keys()]
-        self.table.setRowCount(len(QApplication.instance().books))
         self.table.setColumnCount(len(collabels))
         
         for n,label in enumerate(collabels):
             item = QTableWidgetItem(label)
             self.table.setHorizontalHeaderItem(n,item)
         
-        for col, (hash,book) in enumerate(
+        for row, (hash,book) in enumerate(
                 QApplication.instance().books.items()
                 ):
-            for row, field in enumerate((
+            self.table.insertRow(row)
+            for col, field in enumerate((
                 hash,
                 book.title,
                 book.author,
                 book.language
                 )):
+                LOG(4,"Populating row %d col: %d with %s" % (row,col,field)) 
                 item = QTableWidgetItem(field)
                 item.setTextColor(QColor('black'))
                 item.setFlags(Qt.ItemFlags(
                     Qt.ItemIsSelectable)
                     )
-                self.table.setItem(col,row,item)
+                self.table.setItem(row, col, item)
             
             for n,v in enumerate(QApplication.instance().json.values()):
-                '''item = QCheckBox()
-                self.table.setCellWidget(col,row+n+1,item)'''
-
+                LOG(4,"Populating row %d col: %d with %r" % (row,col+n+1,hash in
+                v['items'])) 
                 item = CheckBox()
                 item.setCheckState(Qt.CheckState(hash in v['items']))
-                self.table.setItem(col,row+n+1,item)
+                self.table.setItem(row, col+n+1, item)
 
         self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
+        #self.table.resizeRowsToContents()
         self.table.verticalHeader().hide()
         self.table.setColumnHidden(0,True)
         
