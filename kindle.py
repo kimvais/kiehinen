@@ -104,3 +104,6 @@ def remove_item(kjd, collection, hash):
         else:
             kjd[cn]['items'].remove(hash)
             update_ts(kjd[cn])
+
+def get_books_in_collection(kjd, collection):
+    return kjd[COLLNAME % collection]['items']

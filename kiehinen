@@ -13,7 +13,7 @@ Requirements:
     install for 4Suite-XML seems to bug, but it can be found from yum)
     PyQt4 or PySide
 
-''' # Standard BSD 2-clause license << K
+'''
 
 # Standard & 3rd party libraries
 import sys,optparse
@@ -43,8 +43,7 @@ class Application(QApplication):
         if self.json:
             kindle.save_data(self.json)
         else:
-            # TODO: display error
-            pass
+            QMessageBox.critical(self.mw, "Error", "There is no data to save")
     
     def load_json(self):
         self.json = kindle.load_data()
@@ -98,35 +97,32 @@ class CheckBox(QTableWidgetItem):
 class Table(QTableWidget):
     def __init__(self):
         QTableWidget.__init__(self)
-        QTableWidget.setSortingEnabled(self,True)
+        QTableWidget.setSortingEnabled(self, True)
 
     def stateChanged(self,row,col):
         if col < 4:
             return
         
+        json_data = QApplication.instance().json
+
         checked = self.item(row,col).checkState()
-        LOG(3,"Item (%d,%d) is %d" % (row,col,checked))
-        collection = QTableWidget.horizontalHeaderItem(self,col).text()
+        LOG(3,"Item (%d,%d) is %d" % (row, col, checked))
+        headeritem = QTableWidget.horizontalHeaderItem(self, col)
+        
+        collection = headeritem.text()
         hash = QTableWidget.item(self,row,0).text()
         
         if checked:
-            LOG(3,"Adding item %s to collection %s" % (hash,collection))
-            kindle.add_item(QApplication.instance().json, 
-                    str(collection), 
-                    str(hash)
-                    )
+            LOG(3,"Adding item %s to collection %s" % (hash, collection))
+            kindle.add_item(json_data, str(collection), str(hash))
         else:
-            LOG(3,"Removing item %s from collection %s" % (hash,collection))
-            kindle.remove_item(QApplication.instance().json, 
-                    str(collection), 
-                    str(hash)
-                    )
+            LOG(3,"Removing item %s from collection %s" % (hash, collection))
+            kindle.remove_item(json_data, str(collection), str(hash))
 
-    '''about = QMessageBox(QMessageBox.Information,
-            "About kiehinen v%s" % VERSION,
-            '\n'.join((ABOUT,LICENSE)),
-            QMessageBox.Close)
-    about.exec_()'''
+        s = "%s (%d)" % (collection,
+                len(kindle.get_books_in_collection(json_data, collection)))
+        headeritem.setStatusTip(s)
+        headeritem.setToolTip(s)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -267,8 +263,7 @@ class MainWindow(QMainWindow):
 
 def main():
     usage = "usage: %prog [options]"
-    ver = "0.1"
-    p = optparse.OptionParser(usage=usage,version=ver)
+    p = optparse.OptionParser(usage=usage,version=VERSION)
     p.add_option('--new', '-n', help="create a new collection")
     p.add_option('--delete', '-d', help="delete a collection")
     p.add_option('--remove', '-r', help="remove an item from a collection")
