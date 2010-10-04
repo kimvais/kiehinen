@@ -79,10 +79,14 @@ class Application(QApplication):
     def delete_collection(self):
         collections = [x.replace("@en-US","") for x in self.json.keys()]
         table = self.mw.table
+        columns = dict([(table.horizontalHeaderItem(n).text(),n) for n in
+            range(4,table.columnCount())])
+        LOG(4,"Columns: %s" % repr(columns))
         name, ok = QInputDialog.getItem(self.mw, "Delete collection?",
                 "Collection:", collections, 0, False)
         if ok:
             kindle.delete_collection(self.json, name)
+            table.removeColumn(columns[name])
         else:
             LOG(4,"Collection deletion cancelled")
 
