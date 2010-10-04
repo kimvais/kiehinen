@@ -83,6 +83,8 @@ EXTH_RECORD_TYPES = {
         503 : 'updated title'
         }
 
+PRC_HDRFMT =  '>H2xIHHI' # Compression,unused,Len,Count,Size,Pos
+
 def parse_palmdb(data):
     from PalmDB import PalmDatabase
     db = PalmDatabase.PalmDatabase()
@@ -148,13 +150,18 @@ class Book:
             # Get and decode the book name
             if self.mobi['locale_language'] in LANGUAGES:
                 lang = LANGUAGES[self.mobi['locale_language']]
-                self.language = lang[0][1]
                 if self.mobi['locale_country'] == 0:
                     LOG(2,"Book language: %s" % lang[0][1])
+                    self.language = "%s (%s)" % (lang[0][1], lang[0][0])
                 elif self.mobi['locale_country'] in lang:
                     country = lang[self.mobi['locale_country']]
                     LOG(2,"Book language is %s (%s)" % (
                         lang[0][1],country[1]))
+                    self.language = "%s (%s-%s)" % (
+                        lang[0][1],
+                        lang[0][0],
+                        country[0]
+                        )
 
             pos = self.mobi['full_name_offs']
             end = pos + self.mobi['full_name_len']
@@ -175,23 +182,29 @@ class Book:
                     self.author = "n/a"
                 self.rawdata = d
 
+                if 'updated title' in self.exth:
+                    self.title = ' '.join(self.exth['updated title'])
+
                 return None
             
         elif self.type == 'TEXtREAd':
             LOG(2,"This is an older MOBI book")
             self.rawdata = d
-
-        # set the mandatory fields if we do not know them yet
-
-    def get_data(self):
-        if self.type == 'BOOKMOBI':
-            return u"'%s' by [%s] (%s)" % (
-                self.title,
-                self.author,
-                self.language
-                )
-        else:
-            return "%s" % (self.filename)
+            compression, data_len, rec_count, rec_size, pos = unpack(
+                    PRC_HDRFMT, rec0[:calcsize(PRC_HDRFMT)])
+            LOG(3,"compression %d, data_len %d, rec_count %d, rec_size %d" %
+                    (compression, data_len, rec_count, rec_size))
+            if compression == 2:
+                from doc_compress import uncompress
+                data = uncompress(self.records[1].toByteArray(0)[1])
+            else:
+                data = self.records[1].toByteArray(0)[1]
+            from BeautifulSoup import BeautifulSoup
+            soup = BeautifulSoup(data)
+            
+            self.title = soup.fetch("dc:title")[0].getText()
+            self.author = soup.fetch("dc:creator")[0].getText()
+            self.language = soup.fetch("dc:language")[0].getText()
 
 def parse_exth(data,pos):
     ret = {}
