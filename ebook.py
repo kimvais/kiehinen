@@ -86,10 +86,9 @@ EXTH_RECORD_TYPES = {
 
 PRC_HDRFMT =  '>H2xIHHI' # Compression,unused,Len,Count,Size,Pos
 
-def parse_palmdb(data):
-    from PalmDB import PalmDatabase
-    db = PalmDatabase.PalmDatabase()
-    db.fromByteArray(data)
+def parse_palmdb(filename):
+    import palm
+    db = palm.Database(filename)
     return db
 
 class Book:
@@ -104,6 +103,7 @@ class Book:
 
         f = open(fn)
         d = f.read(68)
+        f.close()
         encodings = {
                 1252: 'cp1252',
                 65001: 'utf-8'
@@ -113,24 +113,19 @@ class Book:
 
         if self.type not in supported_types:
             LOG(1,"Unsupported file type %s" % (self.type))
-            f.close()
             return None
 
-        f.seek(0)
-        d = f.read()
-        f.close()
-
         try:
-            db = parse_palmdb(d) 
+            db = parse_palmdb(fn) 
         except:
             return None
        
         self.is_a_book = True
         # now we have a better guess at the title, use it for now
-        self.title = db.attributes['fileName']
+        self.title = db.name
 
         self.records = db.records
-        rec0 = self.records[0].toByteArray(0)[1]
+        rec0 = self.records[0].data
         
         #LOG(5,repr(rec0))
         if self.type == 'BOOKMOBI':
@@ -196,9 +191,9 @@ class Book:
             LOG(3,"compression %d, data_len %d, rec_count %d, rec_size %d" %
                     (compression, data_len, rec_count, rec_size))
             if compression == 2:
-                data = uncompress(self.records[1].toByteArray(0)[1])
+                data = uncompress(self.records[1].data)
             else:
-                data = self.records[1].toByteArray(0)[1]
+                data = self.records[1].data
             from BeautifulSoup import BeautifulSoup
             soup = BeautifulSoup(data)
             
