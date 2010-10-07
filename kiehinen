@@ -244,7 +244,7 @@ class MainWindow(QMainWindow):
                 item = QTableWidgetItem(field)
                 item.setTextColor(QColor('black'))
                 item.setFlags(Qt.ItemFlags(
-                    Qt.ItemIsSelectable)
+                    Qt.ItemIsSelectable | Qt.ItemIsEnabled )
                     )
                 self.table.setItem(row, col, item)
             

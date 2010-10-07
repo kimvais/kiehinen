@@ -1,7 +1,7 @@
 from debug import LOG
 from struct import unpack,pack,calcsize
 from mobi_languages import LANGUAGES
-from doc_compress import uncompress
+from lz77 import uncompress
 
 MOBI_HDR_FIELDS = (
     ("id",16,"4s"),
@@ -202,7 +202,8 @@ class Book:
             self.language = soup.fetch("dc:language")[0].getText()
 
     def to_html(self):
-        return ''.join([uncompress(x.toByteArray(0)[1]) for x in self.records[1:self.mobi['first_image_idx']]])
+        last_idx = self.mobi['first_image_idx'] if 'mobi' in self.__dict__ else -1
+        return ''.join([uncompress(x.data) for x in self.records[1:last_idx]])
 
 
 def parse_exth(data,pos):
