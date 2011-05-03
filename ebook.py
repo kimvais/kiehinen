@@ -178,7 +178,8 @@ class Book:
                     self.author = "n/a"
                 self.rawdata = d
 
-                if 'updated title' in self.exth:
+                if (('updated title' in self.exth) and 
+                    (type(self.exth['updated title']) is str)):
                     self.title = ' '.join(self.exth['updated title'])
 
                 return None
@@ -196,10 +197,15 @@ class Book:
                 data = self.records[1].data
             from BeautifulSoup import BeautifulSoup
             soup = BeautifulSoup(data)
-            
-            self.title = soup.fetch("dc:title")[0].getText()
-            self.author = soup.fetch("dc:creator")[0].getText()
-            self.language = soup.fetch("dc:language")[0].getText()
+           
+            self.metadata = soup.fetch("dc-metadata")
+            try:
+                self.title = soup.fetch("dc:title")[0].getText()
+                self.author = soup.fetch("dc:creator")[0].getText()
+                self.language = soup.fetch("dc:language")[0].getText()
+            except:
+                self.title, self.author, self.language = ("Unknown", "Unknown",
+                        "en-us")
 
     def to_html(self):
         last_idx = self.mobi['first_image_idx'] if 'mobi' in self.__dict__ else -1

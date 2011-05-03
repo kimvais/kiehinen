@@ -4,6 +4,7 @@ from ConfigParser import ConfigParser
 cp = ConfigParser()
 cp.read("kiehinen.conf")
 
+
 def xxx(s):
     pass
 
