@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-DISTNAME := kiehinen-0.3.1
+DISTNAME := kiehinen-0.3.2
 DISTFILES := `hg status -cma -n`
 
 distribution: distdir
