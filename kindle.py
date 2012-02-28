@@ -5,10 +5,10 @@ reserved.
 
 import simplejson as json
 import glob
-import ebook
-from debug import LOG
+from . import ebook
+from .debug import LOG
 from time import time
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 # Set this to point to kindle, default for most modern Linuxes below
 #KINDLEDIR = "/media/Kindle/"

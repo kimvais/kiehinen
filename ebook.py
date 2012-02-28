@@ -1,7 +1,7 @@
 #from debug import LOG
 from struct import unpack,pack,calcsize
-from mobi_languages import LANGUAGES
-from lz77 import uncompress
+from .mobi_languages import LANGUAGES
+from .lz77 import uncompress
 
 def LOG(*args):
     pass
@@ -90,7 +90,7 @@ EXTH_RECORD_TYPES = {
 PRC_HDRFMT =  '>H2xIHHI' # Compression,unused,Len,Count,Size,Pos
 
 def parse_palmdb(filename):
-    import palm
+    from . import palm
     db = palm.Database(filename)
     return db
 

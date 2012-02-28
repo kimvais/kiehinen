@@ -55,7 +55,7 @@ class Database():
         while len(recs) > 1:
             pos, flags, uid = recs.pop(0)
             if f.tell() != pos:
-                print "ERROR %d != %d" % (f.tell(), pos)
+                print("ERROR %d != %d" % (f.tell(), pos))
                 f.seek(pos)
             end = recs[0][0]
             l = end-pos

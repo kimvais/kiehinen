@@ -1,5 +1,5 @@
 import logging
-from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 cp = ConfigParser()
 cp.read("kiehinen.conf")
