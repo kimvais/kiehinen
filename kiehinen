@@ -5,7 +5,7 @@ All rights reserved.
 
 Released under the MIT license, see LICENSE.txt for details.
 '''
-VERSION = "0.2"
+VERSION = "0.3.1"
 
 '''
 Requirements:

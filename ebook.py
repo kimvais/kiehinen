@@ -1,7 +1,10 @@
-from debug import LOG
+#from debug import LOG
 from struct import unpack,pack,calcsize
 from mobi_languages import LANGUAGES
 from lz77 import uncompress
+
+def LOG(*args):
+    pass
 
 MOBI_HDR_FIELDS = (
     ("id",16,"4s"),
