@@ -32,6 +32,7 @@ import string
 COUNT_BITS = 3
 DISP_BITS = 11
 
+
 def compress(s):
 	# optimizations
 	# this cut off about 0.1 sec/call
