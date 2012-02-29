@@ -1,126 +1,128 @@
 #!/usr/bin/env python
-'''
+"""
 Copyright 2010 Kimmo Parviainen-Jalanko
 All rights reserved.
 
 Released under the MIT license, see LICENSE.txt for details.
-'''
-VERSION = "0.2"
 
-'''
 Requirements:
     PalmDB module (can be installed from pip - requires 4Suite-XML, pip
     install for 4Suite-XML seems to bug, but it can be found from yum)
     PyQt4 or PySide
 
-'''
 
+"""
+
+VERSION = "0.2"
 # Standard & 3rd party libraries
-import sys,optparse
-#from PySide.QtGui import *
-#from PySide.QtCore import *
-from PyQt4.QtGui import *
-from PyQt4.QtCore import *
+import sys
+from optparse import OptionParser
+from PySide.QtGui import *
+from PySide.QtCore import *
+#from PyQt4.QtGui import *
+#from PyQt4.QtCore import *
 
 
 # Our own stuff
 import kindle
 
-def LOG(n,s):
-    print "%d:%s" % (n,s)
 
-def report_status(at,total,fn):
-    print "Reading file %s (%d/%d)" % (fn,at,total)
+def LOG(n, s):
+    print("{0:d}:{1:>s}".format(n, s))
+
+
+def report_status(at, total, fn):
+    print("Reading file %s (%d/%d)" % (fn, at, total))
+
 
 class Application(QApplication):
-    def __init__(self,argv):
-        QApplication.__init__(self,argv)
+    def __init__(self, argv):
+        QApplication.__init__(self, argv)
         self.json = None
         self.books = None
         self.setWindowIcon(QIcon("icons/man.png"))
-    
+
     def save_json(self):
         if self.json:
             kindle.save_data(self.json)
         else:
             QMessageBox.critical(self.mw, "Error", "There is no data to save")
-    
+
     def load_json(self):
         self.json = kindle.load_data()
         progress = QProgressDialog("Reading books",
                 "Cancel",
                 0,
-                kindle.get_bookcount()-1,
-                self.mw
-                )
+                kindle.get_bookcount() - 1,
+                self.mw)
         progress.setWindowModality(Qt.WindowModal)
         self.books = kindle.get_books(progress.setValue)
 
     def create_collection(self):
         table = self.mw.table
-        name, ok = QInputDialog.getText(self.mw, 
-                'Create collection', 'Enter collection name'
-                )
+        name, ok = QInputDialog.getText(self.mw,
+                'Create collection', 'Enter collection name')
         if ok:
             kindle.add_collection(self.json, name)
-            col = table.columnCount()  
-            table.setColumnCount(col+1)
+            col = table.columnCount()
+            table.setColumnCount(col + 1)
             item = QTableWidgetItem(name)
             table.setHorizontalHeaderItem(col, item)
             for row in range(table.rowCount()):
-                LOG(4,"(row %d, col %d)" % (row, col))
+                LOG(4, "(row %d, col %d)" % (row, col))
                 item = CheckBox()
                 item.setCheckState(False)
                 table.setItem(row, col, item)
 
         else:
-            LOG(4,"Collection creation cancelled")
+            LOG(4, "Collection creation cancelled")
 
     def delete_collection(self):
-        collections = [x.replace("@en-US","") for x in self.json.keys()]
+        collections = [x.replace("@en-US", "") for x in self.json.keys()]
         table = self.mw.table
-        columns = dict([(table.horizontalHeaderItem(n).text(),n) for n in
-            range(4,table.columnCount())])
-        LOG(4,"Columns: %s" % repr(columns))
+        columns = dict([(table.horizontalHeaderItem(n).text(), n) for n in
+            range(4, table.columnCount())])
+        LOG(4, "Columns: %s" % repr(columns))
         name, ok = QInputDialog.getItem(self.mw, "Delete collection?",
                 "Collection:", collections, 0, False)
         if ok:
             kindle.delete_collection(self.json, name)
             table.removeColumn(columns[name])
         else:
-            LOG(4,"Collection deletion cancelled")
+            LOG(4, "Collection deletion cancelled")
 
 
 class CheckBox(QTableWidgetItem):
     def __init__(self):
-        QTableWidgetItem.__init__(self,1000)
+        QTableWidgetItem.__init__(self, 1000)
         self.setTextAlignment(Qt.AlignVCenter | Qt.AlignJustify)
-        self.setFlags(Qt.ItemFlags( 
-            Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable ))
+        self.setFlags(Qt.ItemFlags(
+            Qt.ItemIsSelectable | Qt.ItemIsEnabled | Qt.ItemIsUserCheckable))
+
 
 class Table(QTableWidget):
     def __init__(self):
         QTableWidget.__init__(self)
         QTableWidget.setSortingEnabled(self, True)
 
-    def stateChanged(self,row,col):
+    def stateChanged(self, row, col):
         if col < 4:
             return
-        
+
         json_data = QApplication.instance().json
 
-        checked = self.item(row,col).checkState()
-        LOG(3,"Item (%d,%d) is %d" % (row, col, checked))
+        checked = self.item(row, col).checkState()
+        LOG(3, "Item (%d,%d) is %d" % (row, col, checked))
         headeritem = QTableWidget.horizontalHeaderItem(self, col)
-        
+
         collection = headeritem.text()
-        hash = QTableWidget.item(self,row,0).text()
-        
+        hash = QTableWidget.item(self, row, 0).text()
+
         if checked:
-            LOG(3,"Adding item %s to collection %s" % (hash, collection))
+            LOG(3, "Adding item %s to collection %s" % (hash, collection))
             kindle.add_item(json_data, str(collection), str(hash))
         else:
-            LOG(3,"Removing item %s from collection %s" % (hash, collection))
+            LOG(3, "Removing item %s from collection %s" % (hash, collection))
             kindle.remove_item(json_data, str(collection), str(hash))
 
         s = "%s (%d)" % (collection,
@@ -128,15 +130,16 @@ class Table(QTableWidget):
         headeritem.setStatusTip(s)
         headeritem.setToolTip(s)
 
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
 
         screen = QDesktopWidget().screenGeometry()
-        self.resize(screen.width(),screen.height())
-        self.move(0,0)
+        self.resize(screen.width(), screen.height())
+        self.move(0, 0)
         self.setWindowTitle('Kiehinen')
-       
+
         # Create controls
         menubar = self.menuBar()
         filemenu = menubar.addMenu('&File')
@@ -148,7 +151,7 @@ class MainWindow(QMainWindow):
         load.setShortcut('Ctrl+L')
         load.setStatusTip("Load book data")
         self.connect(load, SIGNAL('triggered()'), self.load_data)
-        
+
         save = QAction(QIcon('icons/filesave.png'), 'Save', self)
         save.setShortcut('Ctrl+S')
         save.setStatusTip("Save book data")
@@ -201,8 +204,9 @@ class MainWindow(QMainWindow):
         self.counter.setFrameStyle(QFrame.Sunken)
         self.statusBar().addPermanentWidget(self.counter)
 
-    def report_progress(self,at,total,fn):
-        self.statusBar().showMessage("Reading file %d/%d (%s)" % (at,total,fn))
+    def report_progress(self, at, total, fn):
+        self.statusBar().showMessage("Reading file %d/%d (%s)"
+            % (at, total, fn))
 
     def load_data(self):
         self.statusBar().showMessage("Getting the list of eBook files")
@@ -212,62 +216,59 @@ class MainWindow(QMainWindow):
     def show_about(self):
         QMessageBox.about(self,
                 "About kiehinen v%s" % VERSION,
-                open("about.html","r").read()
-                )   
+                open("about.html", "r").read())
 
     def create_table(self):
         books = QApplication.instance().books
         json_data = QApplication.instance().json
-        
+
         collabels = [
                 'Hash',
                 'Title',
                 'Author',
-                'Language'
-                ]+[x.replace('@en-US','') for x in json_data.keys()]
+                'Language'] + [
+            x.replace('@en-US', '') for x in json_data.keys()]
 
         self.table.setColumnCount(len(collabels))
-        
-        for n,label in enumerate(collabels):
+
+        for n, label in enumerate(collabels):
             item = QTableWidgetItem(label)
-            self.table.setHorizontalHeaderItem(n,item)
-        
-        for row, (hash,book) in enumerate(books.items()):
+            self.table.setHorizontalHeaderItem(n, item)
+
+        for row, (hash, book) in enumerate(books.items()):
             self.table.insertRow(row)
             for col, field in enumerate((
                 hash,
                 book.title,
                 book.author,
-                book.language
-                )):
-                LOG(4,"Populating row %d col: %d with %s" % (row,col,field)) 
+                book.language)):
+                LOG(4, "Populating row %d col: %d with %s" % (row, col, field))
                 item = QTableWidgetItem(field)
                 item.setTextColor(QColor('black'))
                 item.setFlags(Qt.ItemFlags(
-                    Qt.ItemIsSelectable | Qt.ItemIsEnabled )
-                    )
+                    Qt.ItemIsSelectable | Qt.ItemIsEnabled))
                 self.table.setItem(row, col, item)
-            
-            for n,v in enumerate(json_data.values()):
-                LOG(4,"Populating row %d col: %d with %r" % (
-                    row, col+n+1, hash in v['items']
-                    ) ) 
+
+            for n, v in enumerate(json_data.values()):
+                LOG(4, "Populating row %d col: %d with %r" % (
+                    row, col + n + 1, hash in v['items']))
                 item = CheckBox()
                 item.setCheckState(Qt.CheckState(hash in v['items']))
-                self.table.setItem(row, col+n+1, item)
+                self.table.setItem(row, col + n + 1, item)
 
         self.table.resizeColumnsToContents()
         #self.table.resizeRowsToContents()
         self.table.verticalHeader().hide()
-        self.table.setColumnHidden(0,True)
+        self.table.setColumnHidden(0, True)
         self.counter.setText("%d books" % len(books))
-        
+
         self.connect(self.table, SIGNAL('cellChanged(int, int)'),
                        self.table.stateChanged)
 
+
 def main():
     usage = "usage: %prog [options]"
-    p = optparse.OptionParser(usage=usage,version=VERSION)
+    p = OptionParser(usage=usage, version=VERSION)
     p.add_option('--new', '-n', help="create a new collection")
     p.add_option('--delete', '-d', help="delete a collection")
     p.add_option('--remove', '-r', help="remove an item from a collection")
@@ -276,7 +277,6 @@ def main():
         help="do not use the QT interface", default=True)
     p.add_option('--list', '-l', action="store_true", dest="list",
         help="list collections", default=False)
-    
 
     options, args = p.parse_args()
 
@@ -285,21 +285,21 @@ def main():
         app.mw = MainWindow()
         app.mw.show()
         sys.exit(app.exec_())
-    
+
     kjd = kindle.load_data()
 
-    # Process options    
+    # Process options
     if options.new:
         kindle.add_collection(kjd, options.new)
     elif options.delete:
         kindle.delete_collection(kjd, options.delete)
     elif options.list:
         for key in kjd.keys():
-            LOG(2,"Found collection %s" % str(key.split('@')[0]))
+            LOG(2, "Found collection %s" % str(key.split('@')[0]))
         books = kindle.get_books(report_status)
-        LOG(2,"Found %d books" % len(books))
-        for hash,book in books.items():
-            print "%s" % hash
+        LOG(2, "Found %d books" % len(books))
+        for hash, book in books.items():
+            print("%s" % hash)
     elif options.add:
         kindle.add_item(kjd, options.add, args[0])
     elif options.remove:
@@ -310,4 +310,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
